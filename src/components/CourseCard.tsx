@@ -5,12 +5,14 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { UrgencyBadge } from '@/components/UrgencyBadge';
 import { Course, CourseStatus } from '@/types';
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 
 interface Props {
   course: Course;
   status: CourseStatus;
   onPress: () => void;
+  showUrgency?: boolean;
 }
 
 function urgencyDotColor(level: CourseStatus['urgency']): string {
@@ -24,34 +26,50 @@ function urgencyDotColor(level: CourseStatus['urgency']): string {
   }
 }
 
-export function CourseCard({ course, status, onPress }: Props) {
+function medicationSummary(course: Course): string | undefined {
+  if (course.medications.length === 0) {
+    return undefined;
+  }
   const firstMed = course.medications[0];
-  const label =
-    course.medications.length > 1
-      ? `${firstMed?.name ?? course.name} +${course.medications.length - 1} more`
-      : (firstMed?.name ?? course.name);
+  if (course.medications.length > 1) {
+    return `${firstMed.name} +${course.medications.length - 1} more`;
+  }
+  return firstMed.name;
+}
+
+export function CourseCard({
+  course,
+  status,
+  onPress,
+  showUrgency = false,
+}: Props) {
+  const firstMed = course.medications[0];
+  const summary = medicationSummary(course);
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, CardShadow, CardSurfaceClip]}
       onPress={onPress}
       activeOpacity={0.75}>
       <View style={styles.topRow}>
         <View style={styles.nameRow}>
-          <View
-            style={[
-              styles.dot,
-              { backgroundColor: urgencyDotColor(status.urgency) },
-            ]}
-          />
-          <Text style={styles.name}>{label}</Text>
-          <UrgencyBadge level={status.urgency} />
+          {showUrgency && (
+            <View
+              style={[
+                styles.dot,
+                { backgroundColor: urgencyDotColor(status.urgency) },
+              ]}
+            />
+          )}
+          <Text style={styles.name}>{course.name}</Text>
+          {showUrgency && <UrgencyBadge level={status.urgency} />}
         </View>
         <Text style={styles.daysLeft}>{status.daysLeft} days left</Text>
       </View>
-      {firstMed && (
+      {summary ? <Text style={styles.medSummary}>{summary}</Text> : null}
+      {firstMed?.dosageStrength ? (
         <Text style={styles.dosage}>{firstMed.dosageStrength}</Text>
-      )}
+      ) : null}
       <ProgressBar progress={status.progressRatio} style={styles.bar} />
       <Text style={styles.footer}>
         {status.daysElapsed} days completed · {course.durationDays} day course
@@ -66,6 +84,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    marginHorizontal: 20,
   },
   topRow: {
     flexDirection: 'row',
@@ -88,6 +107,11 @@ const styles = StyleSheet.create({
     ...Typography.bodySemiBold,
     color: Colors.textPrimary,
   },
+  medSummary: {
+    ...Typography.caption,
+    color: Colors.textMuted,
+    marginTop: 4,
+  },
   daysLeft: {
     ...Typography.bodySemiBold,
     color: Colors.textPrimary,
@@ -95,8 +119,7 @@ const styles = StyleSheet.create({
   dosage: {
     ...Typography.caption,
     color: Colors.textMuted,
-    marginTop: 4,
-    marginLeft: 16,
+    marginTop: 2,
   },
   bar: {
     marginTop: 12,

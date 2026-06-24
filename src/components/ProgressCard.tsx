@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { DonutChart } from '@/components/DonutChart';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Colors } from '@/tokens/colors';
+import { CardShadowElevated, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 
 interface Props {
@@ -15,7 +16,7 @@ export function ProgressCard({ taken, total }: Props) {
   const pct = total === 0 ? 0 : Math.round((taken / total) * 100);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, CardShadowElevated, CardSurfaceClip]}>
       <View style={styles.topRow}>
         <View style={styles.left}>
           <Text style={styles.label}>TODAY'S PROGRESS</Text>

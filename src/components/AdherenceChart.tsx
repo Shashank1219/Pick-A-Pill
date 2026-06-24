@@ -4,6 +4,7 @@ import Svg, { Rect } from 'react-native-svg';
 
 import { WeekDay } from '@/types';
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 
 interface Props {
@@ -35,7 +36,7 @@ export function AdherenceChart({ weekDays }: Props) {
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, CardShadow, CardSurfaceClip]}>
       <Text style={styles.title}>7-Day Adherence</Text>
       <View style={styles.chartRow} onLayout={onLayout}>
         <View style={styles.yAxis}>

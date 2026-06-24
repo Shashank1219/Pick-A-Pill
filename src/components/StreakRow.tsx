@@ -4,6 +4,7 @@ import { Check } from 'lucide-react-native';
 
 import { WeekDay } from '@/types';
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 
 interface Props {
@@ -15,7 +16,7 @@ const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function StreakRow({ weekDays, streakCount }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, CardShadow, CardSurfaceClip]}>
       <View style={styles.header}>
         <Text style={styles.title}>This Week's Streak</Text>
         <View style={styles.streakPill}>

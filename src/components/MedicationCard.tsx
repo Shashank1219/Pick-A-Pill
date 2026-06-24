@@ -10,7 +10,9 @@ import {
   Medication,
 } from '@/types';
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
+import { cycleDoseStatus } from '@/utils/courseHelpers';
 import { formatTime } from '@/utils/dateHelpers';
 
 interface Props {
@@ -20,6 +22,7 @@ interface Props {
   doseRecord?: DoseRecord;
   displayStatus: DoseStatus;
   onToggle: (status: DoseStatus) => void;
+  disabled?: boolean;
 }
 
 function FormFactorIcon({ formFactor }: { formFactor: FormFactor }) {
@@ -35,11 +38,34 @@ function FormFactorIcon({ formFactor }: { formFactor: FormFactor }) {
   }
 }
 
+function StatusBadge({ status }: { status: DoseStatus }) {
+  if (status === 'taken') {
+    return (
+      <View style={styles.badgeTaken}>
+        <Text style={styles.badgeTextOnColor}>Taken</Text>
+      </View>
+    );
+  }
+  if (status === 'missed') {
+    return (
+      <View style={styles.badgeMissed}>
+        <Text style={styles.badgeTextOnColor}>Missed</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.badgePending}>
+      <Text style={styles.badgeTextMuted}>Pending</Text>
+    </View>
+  );
+}
+
 export function MedicationCard({
   medication,
   slotTime,
   displayStatus,
   onToggle,
+  disabled = false,
 }: Props) {
   const cardStyle =
     displayStatus === 'taken'
@@ -49,20 +75,26 @@ export function MedicationCard({
         : styles.pendingCard;
 
   const handleToggle = () => {
-    const next: DoseStatus =
-      displayStatus === 'pending'
-        ? 'taken'
-        : displayStatus === 'taken'
-          ? 'missed'
-          : 'pending';
-    onToggle(next);
+    if (disabled) {
+      return;
+    }
+    onToggle(cycleDoseStatus(displayStatus));
   };
+
+  const dosageLabel = medication.dosageStrength.trim() || '—';
 
   return (
     <TouchableOpacity
-      style={[styles.card, cardStyle]}
+      style={[
+        styles.card,
+        CardShadow,
+        CardSurfaceClip,
+        cardStyle,
+        disabled && styles.disabledCard,
+      ]}
       onPress={handleToggle}
-      activeOpacity={0.75}>
+      activeOpacity={disabled ? 1 : 0.75}
+      disabled={disabled}>
       <View style={styles.iconWrap}>
         <FormFactorIcon formFactor={medication.formFactor} />
       </View>
@@ -75,27 +107,21 @@ export function MedicationCard({
             ]}>
             {medication.name}
           </Text>
-          {displayStatus === 'taken' && (
-            <View style={styles.badgeTaken}>
-              <Text style={styles.badgeText}>Taken</Text>
-            </View>
-          )}
-          {displayStatus === 'missed' && (
-            <View style={styles.badgeMissed}>
-              <Text style={styles.badgeText}>Missed</Text>
-            </View>
-          )}
+          <StatusBadge status={displayStatus} />
         </View>
         <View style={styles.metaRow}>
           <Text style={styles.meta}>
-            {medication.dosageStrength} · {medication.formFactor}
+            {dosageLabel} · {medication.formFactor}
           </Text>
           <Text style={styles.meta}> · </Text>
           <Clock size={12} color={Colors.textMuted} />
           <Text style={styles.meta}> {formatTime(slotTime)}</Text>
         </View>
       </View>
-      <StatusCircle status={displayStatus} onToggle={handleToggle} />
+      <StatusCircle
+        status={displayStatus}
+        onToggle={disabled ? () => {} : handleToggle}
+      />
     </TouchableOpacity>
   );
 }
@@ -122,6 +148,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pendingBg,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+  disabledCard: {
+    opacity: 0.55,
   },
   iconWrap: {
     width: 44,
@@ -161,9 +190,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  badgeText: {
+  badgePending: {
+    backgroundColor: Colors.progressBg,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  badgeTextOnColor: {
     ...Typography.caption,
     color: Colors.textOnNavy,
+    fontWeight: '600',
+  },
+  badgeTextMuted: {
+    ...Typography.caption,
+    color: Colors.textMuted,
     fontWeight: '600',
   },
   metaRow: {

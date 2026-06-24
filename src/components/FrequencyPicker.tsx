@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import {
   FlatList,
+  InteractionManager,
+  Keyboard,
   Modal,
   StyleSheet,
   Text,
@@ -14,10 +21,15 @@ import { Frequency } from '@/types';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 
+export interface FrequencyPickerRef {
+  focusCustomInput: () => void;
+}
+
 interface Props {
   value: Frequency;
-  customDays?: number;
-  onChange: (v: Frequency, days?: number) => void;
+  customDaysInput?: string;
+  onChange: (v: Frequency, customDaysInput?: string) => void;
+  onAfterSelect?: (frequency: Frequency) => void;
 }
 
 const OPTIONS: Frequency[] = [
@@ -29,61 +41,88 @@ const OPTIONS: Frequency[] = [
   'Custom',
 ];
 
-export function FrequencyPicker({ value, customDays, onChange }: Props) {
-  const [visible, setVisible] = useState(false);
+export const FrequencyPicker = forwardRef<FrequencyPickerRef, Props>(
+  function FrequencyPicker(
+    { value, customDaysInput, onChange, onAfterSelect },
+    ref,
+  ) {
+    const [visible, setVisible] = useState(false);
+    const customInputRef = useRef<TextInput>(null);
 
-  return (
-    <View>
-      <TouchableOpacity
-        style={styles.trigger}
-        onPress={() => setVisible(true)}
-        activeOpacity={0.75}>
-        <Text style={styles.triggerText}>{value}</Text>
-        <ChevronDown size={20} color={Colors.textMuted} />
-      </TouchableOpacity>
-      {value === 'Custom' && (
-        <View style={styles.customRow}>
-          <Text style={styles.customLabel}>Every</Text>
-          <TextInput
-            style={styles.customInput}
-            keyboardType="number-pad"
-            value={customDays?.toString() ?? ''}
-            onChangeText={t =>
-              onChange('Custom', t ? parseInt(t, 10) : undefined)
-            }
-            placeholder="days"
-            placeholderTextColor={Colors.textMuted}
-          />
-          <Text style={styles.customLabel}>days</Text>
-        </View>
-      )}
-      <Modal visible={visible} transparent animationType="fade">
+    useImperativeHandle(
+      ref,
+      () => ({
+        focusCustomInput: () => customInputRef.current?.focus(),
+      }),
+      [],
+    );
+
+    const handleSelect = (item: Frequency) => {
+      Keyboard.dismiss();
+      onChange(
+        item,
+        item === 'Custom' ? customDaysInput ?? '2' : undefined,
+      );
+      setVisible(false);
+      if (onAfterSelect) {
+        InteractionManager.runAfterInteractions(() => {
+          onAfterSelect(item);
+        });
+      }
+    };
+
+    return (
+      <View>
         <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setVisible(false)}>
-          <View style={styles.modal}>
-            <FlatList
-              data={OPTIONS}
-              keyExtractor={item => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.option}
-                  onPress={() => {
-                    onChange(item, item === 'Custom' ? customDays : undefined);
-                    setVisible(false);
-                  }}
-                  activeOpacity={0.75}>
-                  <Text style={styles.optionText}>{item}</Text>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
+          style={styles.trigger}
+          onPress={() => {
+            Keyboard.dismiss();
+            setVisible(true);
+          }}
+          activeOpacity={0.75}>
+          <Text style={styles.triggerText}>{value}</Text>
+          <ChevronDown size={20} color={Colors.textMuted} />
         </TouchableOpacity>
-      </Modal>
-    </View>
-  );
-}
+        {value === 'Custom' && (
+          <View style={styles.customRow}>
+            <Text style={styles.customLabel}>Every</Text>
+            <TextInput
+              ref={customInputRef}
+              style={styles.customInput}
+              keyboardType="number-pad"
+              value={customDaysInput ?? ''}
+              onChangeText={t => onChange('Custom', t)}
+              placeholder="2"
+              placeholderTextColor={Colors.textMuted}
+            />
+            <Text style={styles.customLabel}>days</Text>
+          </View>
+        )}
+        <Modal visible={visible} transparent animationType="fade">
+          <TouchableOpacity
+            style={styles.overlay}
+            activeOpacity={1}
+            onPress={() => setVisible(false)}>
+            <View style={styles.modal}>
+              <FlatList
+                data={OPTIONS}
+                keyExtractor={item => item}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.option}
+                    onPress={() => handleSelect(item)}
+                    activeOpacity={0.75}>
+                    <Text style={styles.optionText}>{item}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   trigger: {

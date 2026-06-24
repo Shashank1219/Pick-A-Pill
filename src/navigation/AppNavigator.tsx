@@ -5,10 +5,12 @@ import {
   NavigationProp,
   useNavigation,
 } from '@react-navigation/native';
-import { ChartBar, Home, Settings } from 'lucide-react-native';
+import { CalendarDays, ChartBar, Home, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FAB } from '@/components/FAB';
 import { DashboardScreen } from '@/screens/DashboardScreen';
+import { HistoryScreen } from '@/screens/HistoryScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 import { Colors } from '@/tokens/colors';
@@ -17,10 +19,15 @@ import { RootStackParamList, TabParamList } from '@/navigation/types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
+const TAB_BAR_HEIGHT = 56;
+const FAB_GAP = 16;
+
 export function AppNavigator() {
-  const [tabIndex, setTabIndex] = React.useState(0);
+  const [activeTab, setActiveTab] = React.useState<keyof TabParamList>('Home');
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const showFab = tabIndex === 0 || tabIndex === 1;
+  const insets = useSafeAreaInsets();
+  const showFab = activeTab === 'Home';
+  const fabBottom = TAB_BAR_HEIGHT + insets.bottom + FAB_GAP;
 
   return (
     <View style={styles.wrap}>
@@ -28,7 +35,10 @@ export function AppNavigator() {
         screenListeners={{
           state: e => {
             const idx = e.data.state?.index ?? 0;
-            setTabIndex(idx);
+            const route = e.data.state?.routes[idx];
+            if (route?.name) {
+              setActiveTab(route.name as keyof TabParamList);
+            }
           },
         }}
         screenOptions={{
@@ -52,6 +62,15 @@ export function AppNavigator() {
           component={DashboardScreen}
           options={{
             tabBarIcon: ({ color, size }) => (
+              <CalendarDays size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="History"
+          component={HistoryScreen}
+          options={{
+            tabBarIcon: ({ color, size }) => (
               <ChartBar size={size} color={color} />
             ),
           }}
@@ -66,10 +85,13 @@ export function AppNavigator() {
           }}
         />
       </Tab.Navigator>
-      <FAB
-        visible={showFab}
-        onPress={() => navigation.navigate('AddMedicationFlow', {})}
-      />
+      {showFab && (
+        <FAB
+          visible
+          bottom={fabBottom}
+          onPress={() => navigation.navigate('AddMedicationFlow', {})}
+        />
+      )}
     </View>
   );
 }

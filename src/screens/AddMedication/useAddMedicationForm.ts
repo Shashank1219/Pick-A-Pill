@@ -1,14 +1,90 @@
 import { useCallback, useEffect, useState } from 'react';
+import uuid from 'react-native-uuid';
 
 import { useCourseStore } from '@/stores/useCourseStore';
-import { FormFactor, Frequency } from '@/types';
+import { FormFactor, Frequency, WeekdayCode } from '@/types';
+import { addHoursToTime } from '@/utils/dateHelpers';
+import { isWeekdayFrequency } from '@/utils/weekdayHelpers';
 
-export interface FormErrors {
-  courseName?: string;
-  medicationName?: string;
-  dosageStrength?: string;
-  customFrequencyDays?: string;
-  customDurationDays?: string;
+export type MedicationBlockFieldErrors = Partial<
+  Record<
+    | 'medicationName'
+    | 'dosageStrength'
+    | 'customFrequencyDays'
+    | 'selectedWeekdays'
+    | 'reminderTime'
+    | 'secondReminderTime',
+    string
+  >
+>;
+
+export interface MedicationBlock {
+  localId: string;
+  medicationName: string;
+  dosageStrength: string;
+  formFactor: FormFactor;
+  frequency: Frequency;
+  customFrequencyDaysInput: string;
+  selectedWeekdays: WeekdayCode[];
+  reminderTime: string;
+  secondReminderTime: string;
+  isExpanded: boolean;
+  errors: MedicationBlockFieldErrors;
+}
+
+function createEmptyBlock(expanded = true): MedicationBlock {
+  return {
+    localId: uuid.v4() as string,
+    medicationName: '',
+    dosageStrength: '',
+    formFactor: 'Pill',
+    frequency: 'Daily',
+    customFrequencyDaysInput: '2',
+    selectedWeekdays: [],
+    reminderTime: '08:00',
+    secondReminderTime: '',
+    isExpanded: expanded,
+    errors: {},
+  };
+}
+
+function parseCustomFrequencyDays(input: string): number | undefined {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const parsed = parseInt(trimmed, 10);
+  if (Number.isNaN(parsed)) {
+    return undefined;
+  }
+  return parsed;
+}
+
+function validateBlockFields(
+  block: MedicationBlock,
+): MedicationBlockFieldErrors {
+  const errors: MedicationBlockFieldErrors = {};
+
+  if (block.medicationName.trim().length < 1) {
+    errors.medicationName = 'Medication name is required';
+  }
+  if (block.frequency === 'Custom') {
+    const parsed = parseCustomFrequencyDays(block.customFrequencyDaysInput);
+    if (parsed === undefined || parsed <= 0) {
+      errors.customFrequencyDays = 'Enter number of days';
+    }
+  }
+  if (
+    isWeekdayFrequency(block.frequency) &&
+    block.selectedWeekdays.length === 0
+  ) {
+    errors.selectedWeekdays = 'Select at least one day';
+  }
+  if (block.frequency === 'Twice Daily' && !block.secondReminderTime.trim()) {
+    errors.secondReminderTime = 'Second reminder time is required';
+  }
+
+  return errors;
 }
 
 export function useAddMedicationForm(
@@ -17,93 +93,190 @@ export function useAddMedicationForm(
 ) {
   const getCourseById = useCourseStore(s => s.getCourseById);
 
+  const skipStepOne = Boolean(existingCourseId);
+
   const [courseName, setCourseName] = useState('');
-  const [medicationName, setMedicationName] = useState('');
-  const [dosageStrength, setDosageStrength] = useState('');
-  const [formFactor, setFormFactor] = useState<FormFactor>('Pill');
-  const [frequency, setFrequency] = useState<Frequency>('Daily');
-  const [customFrequencyDays, setCustomFrequencyDays] = useState<number>(2);
-  const [reminderTime, setReminderTime] = useState('08:00');
   const [durationDays, setDurationDays] = useState(7);
   const [customDurationDays, setCustomDurationDays] = useState(7);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [courseNameError, setCourseNameError] = useState<string | undefined>();
+  const [durationError, setDurationError] = useState<string | undefined>();
+  const [medicationBlocks, setMedicationBlocks] = useState<MedicationBlock[]>([
+    createEmptyBlock(true),
+  ]);
 
   useEffect(() => {
-    if (!editMedicationId || !existingCourseId) {
+    if (!existingCourseId) {
       return;
     }
     const course = getCourseById(existingCourseId);
-    const med = course?.medications.find(m => m.id === editMedicationId);
-    if (!med || !course) {
+    if (!course) {
       return;
     }
     setCourseName(course.name);
-    setMedicationName(med.name);
-    setDosageStrength(med.dosageStrength);
-    setFormFactor(med.formFactor);
-    setFrequency(med.frequency);
-    setCustomFrequencyDays(med.customFrequencyDays ?? 2);
-    setReminderTime(med.reminderTime);
     setDurationDays(course.durationDays);
     setCustomDurationDays(course.durationDays);
+
+    if (editMedicationId) {
+      const med = course.medications.find(m => m.id === editMedicationId);
+      if (med) {
+        setMedicationBlocks([
+          {
+            localId: uuid.v4() as string,
+            medicationName: med.name,
+            dosageStrength: med.dosageStrength,
+            formFactor: med.formFactor,
+            frequency: med.frequency,
+            customFrequencyDaysInput: String(med.customFrequencyDays ?? 2),
+            selectedWeekdays: med.selectedWeekdays ?? [],
+            reminderTime: med.reminderTime,
+            secondReminderTime:
+              med.frequency === 'Twice Daily'
+                ? med.secondReminderTime ??
+                  addHoursToTime(med.reminderTime, 12)
+                : '',
+            isExpanded: true,
+            errors: {},
+          },
+        ]);
+      }
+    }
   }, [editMedicationId, existingCourseId, getCourseById]);
 
   const effectiveDuration = durationDays || customDurationDays;
 
-  const validate = useCallback(
-    (includeCourseFields: boolean): boolean => {
-      const next: FormErrors = {};
-
-      if (includeCourseFields && courseName.trim().length < 1) {
-        next.courseName = 'Course name is required';
-      }
-      if (medicationName.trim().length < 1) {
-        next.medicationName = 'Medication name is required';
-      }
-      if (dosageStrength.trim().length < 1) {
-        next.dosageStrength = 'Dosage strength is required';
-      }
-      if (frequency === 'Custom' && (!customFrequencyDays || customFrequencyDays <= 0)) {
-        next.customFrequencyDays = 'Enter a positive number of days';
-      }
-      if (includeCourseFields && effectiveDuration <= 0) {
-        next.customDurationDays = 'Enter a positive number of days';
-      }
-
-      setErrors(next);
-      return Object.keys(next).length === 0;
+  const updateBlock = useCallback(
+    (localId: string, partial: Partial<MedicationBlock>) => {
+      setMedicationBlocks(prev =>
+        prev.map(block =>
+          block.localId === localId ? { ...block, ...partial } : block,
+        ),
+      );
     },
-    [
-      courseName,
-      medicationName,
-      dosageStrength,
-      frequency,
-      customFrequencyDays,
-      effectiveDuration,
-    ],
+    [],
   );
 
+  const validateBlock = useCallback((localId: string): boolean => {
+    let valid = true;
+    setMedicationBlocks(prev =>
+      prev.map(block => {
+        if (block.localId !== localId) {
+          return block;
+        }
+        const errors = validateBlockFields(block);
+        if (Object.keys(errors).length > 0) {
+          valid = false;
+        }
+        return { ...block, errors, isExpanded: true };
+      }),
+    );
+    return valid;
+  }, []);
+
+  const validateAllBlocks = useCallback((): boolean => {
+    let valid = true;
+    const next = medicationBlocks.map(block => {
+      const errors = validateBlockFields(block);
+      if (Object.keys(errors).length > 0) {
+        valid = false;
+        return { ...block, errors, isExpanded: true };
+      }
+      return { ...block, errors: {} };
+    });
+    setMedicationBlocks(next);
+    return valid;
+  }, [medicationBlocks]);
+
+  const validateCourseName = useCallback((): boolean => {
+    if (skipStepOne) {
+      return true;
+    }
+    if (courseName.trim().length < 1) {
+      setCourseNameError('Course name is required');
+      return false;
+    }
+    if (effectiveDuration <= 0) {
+      setDurationError('Enter a positive number of days');
+      return false;
+    }
+    setCourseNameError(undefined);
+    setDurationError(undefined);
+    return true;
+  }, [courseName, effectiveDuration, skipStepOne]);
+
+  const addBlock = useCallback((): boolean => {
+    const expanded = medicationBlocks.find(b => b.isExpanded);
+    if (expanded) {
+      const errors = validateBlockFields(expanded);
+      if (Object.keys(errors).length > 0) {
+        setMedicationBlocks(prev =>
+          prev.map(block =>
+            block.localId === expanded.localId
+              ? { ...block, errors, isExpanded: true }
+              : block,
+          ),
+        );
+        return false;
+      }
+    }
+
+    setMedicationBlocks(prev => {
+      const collapsed = prev.map(block =>
+        block.isExpanded ? { ...block, isExpanded: false, errors: {} } : block,
+      );
+      return [...collapsed, createEmptyBlock(true)];
+    });
+    return true;
+  }, [medicationBlocks]);
+
+  const removeBlock = useCallback((localId: string) => {
+    setMedicationBlocks(prev => {
+      if (prev.length <= 1) {
+        return prev;
+      }
+      return prev.filter(block => block.localId !== localId);
+    });
+  }, []);
+
+  const expandBlock = useCallback((localId: string) => {
+    setMedicationBlocks(prev =>
+      prev.map(block => ({
+        ...block,
+        isExpanded: block.localId === localId,
+      })),
+    );
+  }, []);
+
+  const collapseBlock = useCallback((localId: string) => {
+    updateBlock(localId, { isExpanded: false });
+  }, [updateBlock]);
+
+  const blockSummary = useCallback((block: MedicationBlock): string => {
+    const name = block.medicationName.trim() || 'Unnamed';
+    const dose = block.dosageStrength.trim() || '—';
+    return `${name} · ${dose} · ${block.formFactor} ✓`;
+  }, []);
+
   return {
+    skipStepOne,
     courseName,
     setCourseName,
-    medicationName,
-    setMedicationName,
-    dosageStrength,
-    setDosageStrength,
-    formFactor,
-    setFormFactor,
-    frequency,
-    setFrequency,
-    customFrequencyDays,
-    setCustomFrequencyDays,
-    reminderTime,
-    setReminderTime,
     durationDays,
     setDurationDays,
     customDurationDays,
     setCustomDurationDays,
     effectiveDuration,
-    errors,
-    validate,
+    courseNameError,
+    durationError,
+    medicationBlocks,
+    updateBlock,
+    addBlock,
+    removeBlock,
+    expandBlock,
+    collapseBlock,
+    validateBlock,
+    validateAllBlocks,
+    validateCourseName,
+    blockSummary,
+    editMedicationId,
   };
 }

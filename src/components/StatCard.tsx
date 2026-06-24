@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 
 interface Props {
@@ -13,7 +14,7 @@ interface Props {
 
 export function StatCard({ icon, value, label, iconColor }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, CardShadow, CardSurfaceClip]}>
       <Text style={[styles.icon, { color: iconColor }]}>{icon}</Text>
       <Text style={styles.value}>{value}</Text>
       <Text style={styles.label}>{label}</Text>

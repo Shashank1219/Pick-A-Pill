@@ -10,10 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Bell, Globe, Heart, Pill, User } from 'lucide-react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Bell, Globe, Pill } from 'lucide-react-native';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { SettingsRow } from '@/components/SettingsRow';
 import {
@@ -23,6 +23,7 @@ import {
 import { useCourseStore } from '@/stores/useCourseStore';
 import { useProfileStore } from '@/stores/useProfileStore';
 import { Colors } from '@/tokens/colors';
+import { CardShadow, CardShadowElevated, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 import { RootStackParamList, TabParamList } from '@/navigation/types';
 
@@ -64,7 +65,7 @@ export function SettingsScreen({ navigation }: Props) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Settings</Text>
 
-      <View style={styles.profileCard}>
+      <View style={[styles.profileCard, CardShadowElevated, CardSurfaceClip]}>
         <View style={styles.profileRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarEmoji}>👤</Text>
@@ -84,7 +85,7 @@ export function SettingsScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <View style={styles.listCard}>
+      <View style={[styles.listCard, CardShadow, CardSurfaceClip]}>
         <SettingsRow
           icon={<Bell size={20} color={Colors.chartBarAmber} />}
           label="Notifications"
@@ -101,18 +102,6 @@ export function SettingsScreen({ navigation }: Props) {
           label="Refill Reminders"
           value={`${refillDays} days before`}
           onPress={() => setRefillPickerVisible(true)}
-        />
-        <SettingsRow
-          icon={<Heart size={20} color={Colors.coral} />}
-          label="Health Data Sync"
-          value="Not connected"
-          onPress={() => showToast('Coming soon')}
-        />
-        <SettingsRow
-          icon={<User size={20} color={Colors.navy} />}
-          label="Caregiver Access"
-          value="Not linked"
-          onPress={() => showToast('Coming soon')}
         />
         <SettingsRow
           icon={<Globe size={20} color={Colors.navy} />}
@@ -223,7 +212,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     borderRadius: 16,
     backgroundColor: Colors.card,
-    overflow: 'hidden',
   },
   footer: {
     marginTop: 32,

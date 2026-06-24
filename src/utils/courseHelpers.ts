@@ -19,6 +19,7 @@ import {
   parseTimeToMinutes,
   todayString,
 } from './dateHelpers';
+import { weekdayCodeFromDate } from './weekdayHelpers';
 
 export function getTimeOfDay(
   reminderTime: string,
@@ -53,9 +54,12 @@ export function isDoseScheduledOnDate(
       return daysSinceStart % 2 === 0;
 
     case 'Weekly': {
-      const startDay = parseISO(course.startDate).getDay();
-      const targetDay = parseISO(date).getDay();
-      return startDay === targetDay;
+      const weekdays = medication.selectedWeekdays ?? [];
+      if (weekdays.length === 0) {
+        return false;
+      }
+      const code = weekdayCodeFromDate(date);
+      return weekdays.includes(code);
     }
 
     case 'Monthly': {
@@ -83,13 +87,19 @@ export function computeDisplayStatus(
   date: string,
   slotTime?: string,
 ): DoseStatus {
-  if (record) {
+  // Stored record always wins — auto-missed fallback applies only when record is absent.
+  if (record !== undefined) {
     return record.status;
   }
 
   const today = todayString();
-  if (date !== today) {
+
+  if (date > today) {
     return 'pending';
+  }
+
+  if (date < today) {
+    return 'missed';
   }
 
   const now = new Date();
@@ -281,6 +291,13 @@ export function computeAdherenceStats(
   };
 }
 
+function resolveSecondReminderTime(medication: Medication): string {
+  return (
+    medication.secondReminderTime ??
+    addHoursToTime(medication.reminderTime, 12)
+  );
+}
+
 export function getMedicationSlots(
   medication: Medication,
 ): Array<{ medicationId: string; slotTime: string }> {
@@ -289,19 +306,20 @@ export function getMedicationSlots(
       { medicationId: medication.id, slotTime: medication.reminderTime },
       {
         medicationId: `${medication.id}_slot2`,
-        slotTime: addHoursToTime(medication.reminderTime, 12),
+        slotTime: resolveSecondReminderTime(medication),
       },
     ];
   }
   return [{ medicationId: medication.id, slotTime: medication.reminderTime }];
 }
 
+/** Advance dose status: missed → pending → taken → missed */
 export function cycleDoseStatus(current: DoseStatus): DoseStatus {
+  if (current === 'missed') {
+    return 'pending';
+  }
   if (current === 'pending') {
     return 'taken';
   }
-  if (current === 'taken') {
-    return 'missed';
-  }
-  return 'pending';
+  return 'missed';
 }

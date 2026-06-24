@@ -6,20 +6,33 @@ import { Colors } from '@/tokens/colors';
 interface Props {
   currentStep: number;
   totalSteps: number;
+  skippedFirstStep?: boolean;
 }
 
-export function StepProgressBar({ currentStep, totalSteps }: Props) {
+export function StepProgressBar({
+  currentStep,
+  totalSteps,
+  skippedFirstStep = false,
+}: Props) {
   return (
     <View style={styles.row}>
-      {Array.from({ length: totalSteps }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.segment,
-            index < currentStep ? styles.active : styles.inactive,
-          ]}
-        />
-      ))}
+      {Array.from({ length: totalSteps }).map((_, index) => {
+        const stepNumber = index + 1;
+        const isComplete =
+          stepNumber < currentStep ||
+          (skippedFirstStep && stepNumber === 1);
+        const isActive = stepNumber === currentStep;
+
+        return (
+          <View
+            key={index}
+            style={[
+              styles.segment,
+              isComplete || isActive ? styles.active : styles.inactive,
+            ]}
+          />
+        );
+      })}
     </View>
   );
 }

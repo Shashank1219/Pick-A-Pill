@@ -11,10 +11,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { DurationSelector } from '@/components/DurationSelector';
-import { FormFactorSelector } from '@/components/FormFactorSelector';
-import { FrequencyPicker } from '@/components/FrequencyPicker';
 import { StepProgressBar } from '@/components/StepProgressBar';
-import { TimePickerField } from '@/components/TimePickerField';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 import { AddMedicationStackParamList } from '@/navigation/types';
@@ -23,13 +20,10 @@ import { useFormContext } from './FormContext';
 type Props = NativeStackScreenProps<AddMedicationStackParamList, 'StepOne'>;
 
 export function StepOneScreen({ navigation, route }: Props) {
-  const { existingCourseId } = route.params;
-  const showCourseFields = !existingCourseId;
-
   const form = useFormContext();
 
   const handleNext = () => {
-    if (form.validate(showCourseFields)) {
+    if (form.validateCourseName()) {
       navigation.navigate('StepTwo', route.params);
     }
   };
@@ -44,115 +38,44 @@ export function StepOneScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         <View>
           <Text style={styles.title}>Add Medication</Text>
-          <Text style={styles.subtitle}>Step 1 of 2 — Details</Text>
+          <Text style={styles.subtitle}>Step 1 of 3 — Course Name</Text>
         </View>
       </View>
-      <StepProgressBar currentStep={1} totalSteps={2} />
+      <StepProgressBar currentStep={1} totalSteps={3} />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
-        {showCourseFields && (
-          <View style={styles.field}>
-            <Text style={styles.label}>
-              COURSE NAME <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Antibiotic Run"
-              placeholderTextColor={Colors.textMuted}
-              value={form.courseName}
-              onChangeText={form.setCourseName}
-            />
-            {form.errors.courseName ? (
-              <Text style={styles.error}>{form.errors.courseName}</Text>
-            ) : null}
-          </View>
-        )}
-
         <View style={styles.field}>
           <Text style={styles.label}>
-            MEDICATION NAME <Text style={styles.required}>*</Text>
+            COURSE NAME <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g., Amoxicillin"
+            placeholder="e.g. Antibiotic Run"
             placeholderTextColor={Colors.textMuted}
-            value={form.medicationName}
-            onChangeText={form.setMedicationName}
+            value={form.courseName}
+            onChangeText={form.setCourseName}
           />
-          {form.errors.medicationName ? (
-            <Text style={styles.error}>{form.errors.medicationName}</Text>
+          {form.courseNameError ? (
+            <Text style={styles.error}>{form.courseNameError}</Text>
           ) : null}
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>
-            DOSAGE STRENGTH <Text style={styles.required}>*</Text>
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., 500mg"
-            placeholderTextColor={Colors.textMuted}
-            value={form.dosageStrength}
-            onChangeText={form.setDosageStrength}
-          />
-          {form.errors.dosageStrength ? (
-            <Text style={styles.error}>{form.errors.dosageStrength}</Text>
-          ) : null}
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>FORM FACTOR</Text>
-          <FormFactorSelector
-            value={form.formFactor}
-            onChange={form.setFormFactor}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>FREQUENCY</Text>
-          <FrequencyPicker
-            value={form.frequency}
-            customDays={form.customFrequencyDays}
-            onChange={(v, days) => {
-              form.setFrequency(v);
-              if (days !== undefined) {
-                form.setCustomFrequencyDays(days);
-              }
+          <Text style={styles.label}>COURSE DURATION</Text>
+          <DurationSelector
+            value={form.durationDays}
+            onChange={days => {
+              form.setDurationDays(days);
+              form.setCustomDurationDays(days);
             }}
           />
-          {form.errors.customFrequencyDays ? (
-            <Text style={styles.error}>{form.errors.customFrequencyDays}</Text>
+          {form.durationError ? (
+            <Text style={styles.error}>{form.durationError}</Text>
           ) : null}
         </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>
-            REMINDER TIME <Text style={styles.required}>*</Text>
-          </Text>
-          <TimePickerField
-            value={form.reminderTime}
-            onChange={form.setReminderTime}
-          />
-        </View>
-
-        {showCourseFields && (
-          <View style={styles.field}>
-            <Text style={styles.label}>COURSE DURATION</Text>
-            <DurationSelector
-              value={form.durationDays}
-              onChange={days => {
-                form.setDurationDays(days);
-                form.setCustomDurationDays(days);
-              }}
-            />
-            {form.errors.customDurationDays ? (
-              <Text style={styles.error}>{form.errors.customDurationDays}</Text>
-            ) : null}
-          </View>
-        )}
 
         <TouchableOpacity
           style={styles.button}

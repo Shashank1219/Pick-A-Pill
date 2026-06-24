@@ -8,6 +8,8 @@ export type Frequency =
   | 'Monthly'
   | 'Custom';
 
+export type WeekdayCode = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
+
 export type DoseStatus = 'taken' | 'missed' | 'pending';
 
 export type UrgencyLevel = 'Low' | 'Medium' | 'High';
@@ -19,7 +21,9 @@ export interface Medication {
   formFactor: FormFactor;
   frequency: Frequency;
   customFrequencyDays?: number;
+  selectedWeekdays?: WeekdayCode[];
   reminderTime: string;
+  secondReminderTime?: string;
 }
 
 export interface Course {

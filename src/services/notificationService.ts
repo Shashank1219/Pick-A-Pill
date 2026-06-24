@@ -7,10 +7,15 @@ import notifee, {
 
 import { useCourseStore } from '@/stores/useCourseStore';
 import { useProfileStore } from '@/stores/useProfileStore';
-import { Course, Medication } from '@/types';
+import { Course, Medication, WeekdayCode } from '@/types';
 import { addHoursToTime } from '@/utils/dateHelpers';
 import { computeCourseStatus } from '@/utils/courseHelpers';
 import { todayString } from '@/utils/dateHelpers';
+import {
+  isWeekdayFrequency,
+  weekdayCodeToIndex,
+  WEEKDAY_CODES,
+} from '@/utils/weekdayHelpers';
 
 const CHANNEL_ID = 'medication-reminders';
 
@@ -35,11 +40,35 @@ function buildDailyTrigger(hhmm: string): TimestampTrigger {
   };
 }
 
+function buildWeeklyTrigger(
+  weekdayIndex: number,
+  hhmm: string,
+): TimestampTrigger {
+  const { hour, minute } = parseTimeParts(hhmm);
+  const now = new Date();
+  const triggerDate = new Date();
+  triggerDate.setHours(hour, minute, 0, 0);
+
+  const currentDay = triggerDate.getDay();
+  let daysUntil = (weekdayIndex - currentDay + 7) % 7;
+  if (daysUntil === 0 && triggerDate.getTime() <= now.getTime()) {
+    daysUntil = 7;
+  }
+  triggerDate.setDate(triggerDate.getDate() + daysUntil);
+
+  return {
+    type: TriggerType.TIMESTAMP,
+    timestamp: triggerDate.getTime(),
+    repeatFrequency: RepeatFrequency.WEEKLY,
+  };
+}
+
 async function scheduleSingleReminder(
   notificationId: string,
   medication: Medication,
   course: Course,
   hhmm: string,
+  trigger: TimestampTrigger,
 ): Promise<void> {
   if (computeCourseStatus(course).isCompleted) {
     return;
@@ -49,7 +78,7 @@ async function scheduleSingleReminder(
     {
       id: notificationId,
       title: `Time for your ${medication.name}`,
-      body: `${medication.dosageStrength} · ${medication.formFactor}`,
+      body: `${medication.dosageStrength || '—'} · ${medication.formFactor}`,
       data: {
         medicationId: medication.id,
         courseId: course.id,
@@ -59,8 +88,42 @@ async function scheduleSingleReminder(
         pressAction: { id: 'default' },
       },
     },
+    trigger,
+  );
+}
+
+async function scheduleDailySlot(
+  notificationId: string,
+  medication: Medication,
+  course: Course,
+  hhmm: string,
+): Promise<void> {
+  await scheduleSingleReminder(
+    notificationId,
+    medication,
+    course,
+    hhmm,
     buildDailyTrigger(hhmm),
   );
+}
+
+async function scheduleWeekdaySlots(
+  medication: Medication,
+  course: Course,
+  hhmm: string,
+  idSuffix: string,
+  weekdays: WeekdayCode[],
+): Promise<void> {
+  for (const day of weekdays) {
+    const notificationId = `med_${medication.id}_${day}${idSuffix}`;
+    await scheduleSingleReminder(
+      notificationId,
+      medication,
+      course,
+      hhmm,
+      buildWeeklyTrigger(weekdayCodeToIndex(day), hhmm),
+    );
+  }
 }
 
 export async function createNotificationChannel(): Promise<void> {
@@ -84,7 +147,16 @@ export async function scheduleMedicationReminder(
     return;
   }
 
-  await scheduleSingleReminder(
+  if (isWeekdayFrequency(medication.frequency)) {
+    const weekdays = medication.selectedWeekdays ?? [];
+    if (weekdays.length === 0) {
+      return;
+    }
+    await scheduleWeekdaySlots(medication, course, medication.reminderTime, '', weekdays);
+    return;
+  }
+
+  await scheduleDailySlot(
     `med_${medication.id}`,
     medication,
     course,
@@ -92,8 +164,10 @@ export async function scheduleMedicationReminder(
   );
 
   if (medication.frequency === 'Twice Daily') {
-    const slot2Time = addHoursToTime(medication.reminderTime, 12);
-    await scheduleSingleReminder(
+    const slot2Time =
+      medication.secondReminderTime ??
+      addHoursToTime(medication.reminderTime, 12);
+    await scheduleDailySlot(
       `med_${medication.id}_slot2`,
       medication,
       course,
@@ -107,6 +181,11 @@ export async function cancelMedicationReminders(
 ): Promise<void> {
   await notifee.cancelNotification(`med_${medicationId}`);
   await notifee.cancelNotification(`med_${medicationId}_slot2`);
+
+  for (const day of WEEKDAY_CODES) {
+    await notifee.cancelNotification(`med_${medicationId}_${day}`);
+    await notifee.cancelNotification(`med_${medicationId}_${day}_slot2`);
+  }
 }
 
 export async function cancelCourseReminders(courseId: string): Promise<void> {

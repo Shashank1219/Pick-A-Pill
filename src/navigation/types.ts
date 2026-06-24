@@ -12,6 +12,7 @@ export type RootStackParamList = {
 export type TabParamList = {
   Home: undefined;
   Dashboard: undefined;
+  History: undefined;
   Settings: undefined;
 };
 
@@ -21,6 +22,10 @@ export type AddMedicationStackParamList = {
     editMedicationId?: string;
   };
   StepTwo: {
+    existingCourseId?: string;
+    editMedicationId?: string;
+  };
+  StepThree: {
     existingCourseId?: string;
     editMedicationId?: string;
   };

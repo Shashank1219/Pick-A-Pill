@@ -6,6 +6,14 @@ import { Medication } from '@/types';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 import { formatTime } from '@/utils/dateHelpers';
+import { formatFrequencyDisplay } from '@/utils/weekdayHelpers';
+
+function formatReminderTimes(medication: Medication): string {
+  if (medication.frequency === 'Twice Daily' && medication.secondReminderTime) {
+    return `${formatTime(medication.reminderTime)}, ${formatTime(medication.secondReminderTime)}`;
+  }
+  return formatTime(medication.reminderTime);
+}
 
 interface Props {
   medication: Medication;
@@ -18,8 +26,12 @@ export function MedicationDetailRow({ medication, onEdit }: Props) {
       <View style={styles.info}>
         <Text style={styles.name}>{medication.name}</Text>
         <Text style={styles.detail}>
-          {medication.dosageStrength} · {medication.formFactor} ·{' '}
-          {medication.frequency} · {formatTime(medication.reminderTime)}
+          {medication.dosageStrength || '—'} · {medication.formFactor} ·{' '}
+          {formatFrequencyDisplay(
+            medication.frequency,
+            medication.selectedWeekdays,
+          )}{' '}
+          · {formatReminderTimes(medication)}
         </Text>
       </View>
       <TouchableOpacity onPress={onEdit} activeOpacity={0.75}>
