@@ -22,7 +22,6 @@ export function EditProfileScreen({ navigation }: Props) {
   const updateProfile = useProfileStore(s => s.updateProfile);
 
   const [name, setName] = useState(profile?.name ?? '');
-  const [email, setEmail] = useState(profile?.email ?? '');
 
   const handleSave = () => {
     if (name.trim().length < 2) {
@@ -30,7 +29,6 @@ export function EditProfileScreen({ navigation }: Props) {
     }
     updateProfile({
       name: name.trim(),
-      email: email.trim() || undefined,
     });
     navigation.goBack();
   };
@@ -52,17 +50,6 @@ export function EditProfileScreen({ navigation }: Props) {
           onChangeText={setName}
           placeholder="Your name"
           placeholderTextColor={Colors.textMuted}
-        />
-
-        <Text style={[styles.label, styles.labelSpaced]}>EMAIL</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="your@email.com"
-          placeholderTextColor={Colors.textMuted}
-          keyboardType="email-address"
-          autoCapitalize="none"
         />
 
         <TouchableOpacity
@@ -99,9 +86,6 @@ const styles = StyleSheet.create({
   label: {
     ...Typography.label,
     color: Colors.textMuted,
-  },
-  labelSpaced: {
-    marginTop: 16,
   },
   input: {
     backgroundColor: Colors.card,

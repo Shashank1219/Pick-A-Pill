@@ -56,7 +56,6 @@ export interface CourseStatus {
 
 export interface UserProfile {
   name: string;
-  email?: string;
   notificationsEnabled: boolean;
   refillReminderDays: number;
   language: string;

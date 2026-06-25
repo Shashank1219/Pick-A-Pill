@@ -72,9 +72,6 @@ export function SettingsScreen({ navigation }: Props) {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{profile?.name ?? 'User'}</Text>
-            <Text style={styles.profileEmail}>
-              {profile?.email ?? 'Tap Edit to add details'}
-            </Text>
           </View>
           <TouchableOpacity
             style={styles.editButton}
@@ -189,11 +186,6 @@ const styles = StyleSheet.create({
   profileName: {
     ...Typography.bodySemiBold,
     color: Colors.textOnNavy,
-  },
-  profileEmail: {
-    ...Typography.caption,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
   },
   editButton: {
     borderWidth: 1,
