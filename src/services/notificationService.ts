@@ -1,5 +1,6 @@
 import notifee, {
   AndroidImportance,
+  AndroidVisibility,
   RepeatFrequency,
   TimestampTrigger,
   TriggerType,
@@ -86,6 +87,7 @@ async function scheduleSingleReminder(
       android: {
         channelId: CHANNEL_ID,
         pressAction: { id: 'default' },
+        visibility: AndroidVisibility.PRIVATE,
       },
     },
     trigger,
