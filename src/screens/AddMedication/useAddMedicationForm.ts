@@ -190,17 +190,23 @@ export function useAddMedicationForm(
     if (skipStepOne) {
       return true;
     }
+
+    let valid = true;
+    let nextCourseNameError: string | undefined;
+    let nextDurationError: string | undefined;
+
     if (courseName.trim().length < 1) {
-      setCourseNameError('Course name is required');
-      return false;
+      nextCourseNameError = 'Course name is required';
+      valid = false;
     }
     if (effectiveDuration <= 0) {
-      setDurationError('Enter a positive number of days');
-      return false;
+      nextDurationError = 'Enter a positive number of days';
+      valid = false;
     }
-    setCourseNameError(undefined);
-    setDurationError(undefined);
-    return true;
+
+    setCourseNameError(nextCourseNameError);
+    setDurationError(nextDurationError);
+    return valid;
   }, [courseName, effectiveDuration, skipStepOne]);
 
   const addBlock = useCallback((): boolean => {

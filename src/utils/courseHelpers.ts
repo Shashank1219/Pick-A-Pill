@@ -1,4 +1,4 @@
-import { format, parseISO, subDays } from 'date-fns';
+import { format, endOfMonth, parseISO, subDays } from 'date-fns';
 
 import {
   AdherenceStats,
@@ -65,7 +65,10 @@ export function isDoseScheduledOnDate(
     case 'Monthly': {
       const startDate = parseISO(course.startDate);
       const targetDate = parseISO(date);
-      return startDate.getDate() === targetDate.getDate();
+      const startDay = startDate.getDate();
+      const lastDayOfTargetMonth = endOfMonth(targetDate).getDate();
+      const effectiveDay = Math.min(startDay, lastDayOfTargetMonth);
+      return targetDate.getDate() === effectiveDay;
     }
 
     case 'Custom': {
@@ -105,6 +108,10 @@ export function computeDisplayStatus(
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const reminderMinutes = parseTimeToMinutes(slotTime ?? medication.reminderTime);
+
+  if (reminderMinutes < 0) {
+    return 'pending';
+  }
 
   if (nowMinutes >= reminderMinutes + 30) {
     return 'missed';
@@ -252,19 +259,17 @@ export function computeAdherenceStats(
     const date = format(subDays(parseISO(today), i), 'yyyy-MM-dd');
     const total = getScheduledDoseCountForDate(courses, date);
     if (total === 0) {
-      if (i === 0) {
-        continue;
-      }
-      break;
+      continue;
     }
     const taken = getTakenCountForDate(courses, records, date);
     if (taken === total) {
       dayStreak += 1;
-    } else if (date === today) {
       continue;
-    } else {
-      break;
     }
+    if (date === today) {
+      continue;
+    }
+    break;
   }
 
   const thirtyDaysAgo = format(subDays(parseISO(today), 29), 'yyyy-MM-dd');

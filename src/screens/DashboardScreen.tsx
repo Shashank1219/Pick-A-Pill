@@ -81,11 +81,14 @@ export function DashboardScreen({ navigation }: Props) {
     () => courses.filter(c => computeCourseStatus(c).isActive),
     [courses],
   );
-  const stats = computeAdherenceStats(courses, records);
+  const stats = useMemo(
+    () => computeAdherenceStats(courses, records),
+    [courses, records],
+  );
   const isToday = selectedDate === todayString();
   const isFutureDate = selectedDate > todayString();
 
-  const missedTodayCount = useMemo(() => {
+  const { missedTodayCount, hasMissedToday } = useMemo(() => {
     const today = todayString();
     let count = 0;
     for (const course of activeCourses) {
@@ -107,7 +110,7 @@ export function DashboardScreen({ navigation }: Props) {
         }
       }
     }
-    return count;
+    return { missedTodayCount: count, hasMissedToday: count > 0 };
   }, [activeCourses, getDoseForDay, records]);
 
   const handleBellPress = () => {
@@ -141,30 +144,6 @@ export function DashboardScreen({ navigation }: Props) {
     }
     return result;
   }, [courses, selectedDate]);
-
-  const hasMissedToday = useMemo(() => {
-    const today = todayString();
-    for (const course of activeCourses) {
-      for (const medication of course.medications) {
-        if (!isDoseScheduledOnDate(medication, course, today)) {
-          continue;
-        }
-        for (const slot of getMedicationSlots(medication)) {
-          const record = getDoseForDay(slot.medicationId, today);
-          const status = computeDisplayStatus(
-            record,
-            medication,
-            today,
-            slot.slotTime,
-          );
-          if (status === 'missed') {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }, [activeCourses, getDoseForDay, records]);
 
   const openAddFlow = () => {
     navigation.navigate('AddMedicationFlow', {});
