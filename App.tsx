@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RootNavigator } from '@/navigation/RootNavigator';
 import {
-  createNotificationChannel,
+  ensureNotificationChannelReady,
   rescheduleAllActiveReminders,
 } from '@/services/notificationService';
 import { useCourseStore } from '@/stores/useCourseStore';
@@ -14,7 +14,7 @@ import { useProfileStore } from '@/stores/useProfileStore';
 function App() {
   useEffect(() => {
     const init = async () => {
-      await createNotificationChannel();
+      await ensureNotificationChannelReady();
       const profile = useProfileStore.getState().profile;
       if (profile?.notificationsEnabled !== false) {
         const courses = useCourseStore.getState().courses;

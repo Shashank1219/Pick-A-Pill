@@ -149,7 +149,7 @@ export function DashboardScreen({ navigation }: Props) {
     navigation.navigate('AddMedicationFlow', {});
   };
 
-  if (activeCourses.length === 0 && courses.length === 0) {
+  if (activeCourses.length === 0) {
     return (
       <View style={[styles.container, styles.emptyWrap]}>
         <Text style={styles.emptyTitle}>No medications today</Text>

@@ -4,6 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -92,46 +93,61 @@ export function StepThreeScreen({ navigation, route }: Props) {
   const progressStep = form.skipStepOne ? 2 : 3;
   const progressTotal = form.skipStepOne ? 2 : 3;
 
+  const scheduleReminders = async (
+    meds: Medication[],
+    course: Course,
+  ): Promise<void> => {
+    try {
+      for (const medication of meds) {
+        await scheduleMedicationReminder(medication, course);
+      }
+    } catch (err) {
+      console.error('Notification scheduling failed:', err);
+      ToastAndroid.show(
+        'Course saved, but reminders could not be scheduled.',
+        ToastAndroid.LONG,
+      );
+    }
+  };
+
   const handleConfirm = async () => {
     const medications = blocksToMedications(
       form.medicationBlocks,
       form.editMedicationId,
     );
 
-    if (form.editMedicationId && existingCourseId) {
-      updateMedicationInCourse(
-        existingCourseId,
-        form.editMedicationId,
-        medications[0],
-      );
-      const course = getCourseById(existingCourseId);
-      if (course) {
-        await scheduleMedicationReminder(medications[0], course);
-      }
-    } else if (existingCourseId) {
-      addMedicationsToCourse(existingCourseId, medications);
-      const course = getCourseById(existingCourseId);
-      if (course) {
-        for (const medication of medications) {
-          await scheduleMedicationReminder(medication, course);
+    try {
+      if (form.editMedicationId && existingCourseId) {
+        updateMedicationInCourse(
+          existingCourseId,
+          form.editMedicationId,
+          medications[0],
+        );
+        const course = getCourseById(existingCourseId);
+        if (course) {
+          await scheduleReminders([medications[0]], course);
         }
+      } else if (existingCourseId) {
+        addMedicationsToCourse(existingCourseId, medications);
+        const course = getCourseById(existingCourseId);
+        if (course) {
+          await scheduleReminders(medications, course);
+        }
+      } else {
+        const course: Course = {
+          id: uuid.v4() as string,
+          name: form.courseName.trim(),
+          startDate,
+          durationDays: form.effectiveDuration,
+          endDate,
+          medications,
+        };
+        addCourse(course);
+        await scheduleReminders(medications, course);
       }
-    } else {
-      const course: Course = {
-        id: uuid.v4() as string,
-        name: form.courseName.trim(),
-        startDate,
-        durationDays: form.effectiveDuration,
-        endDate,
-        medications,
-      };
-      addCourse(course);
-      for (const medication of medications) {
-        await scheduleMedicationReminder(medication, course);
-      }
+    } finally {
+      navigation.getParent()?.goBack();
     }
-
-    navigation.getParent()?.goBack();
   };
 
   return (

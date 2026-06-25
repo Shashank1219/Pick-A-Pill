@@ -48,7 +48,14 @@ export function CourseDetailScreen({ navigation, route }: Props) {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await cancelCourseReminders(courseId);
+            try {
+              await cancelCourseReminders(courseId);
+            } catch (err) {
+              console.error(
+                'Failed to cancel notifications for deleted course:',
+                err,
+              );
+            }
             deleteRecordsForCourse(courseId);
             deleteCourse(courseId);
             navigation.goBack();

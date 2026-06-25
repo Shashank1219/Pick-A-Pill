@@ -15,10 +15,26 @@ import { todayString } from '@/utils/dateHelpers';
 import {
   isWeekdayFrequency,
   weekdayCodeToIndex,
-  WEEKDAY_CODES,
 } from '@/utils/weekdayHelpers';
 
 const CHANNEL_ID = 'medication-reminders';
+
+let channelReadyPromise: Promise<void> | null = null;
+
+async function setupNotificationChannel(): Promise<void> {
+  await notifee.createChannel({
+    id: CHANNEL_ID,
+    name: 'Medication Reminders',
+    importance: AndroidImportance.HIGH,
+  });
+}
+
+export function ensureNotificationChannelReady(): Promise<void> {
+  if (channelReadyPromise === null) {
+    channelReadyPromise = setupNotificationChannel();
+  }
+  return channelReadyPromise;
+}
 
 function parseTimeParts(hhmm: string): { hour: number; minute: number } {
   const [hour, minute] = hhmm.split(':').map(Number);
@@ -129,17 +145,15 @@ async function scheduleWeekdaySlots(
 }
 
 export async function createNotificationChannel(): Promise<void> {
-  await notifee.createChannel({
-    id: CHANNEL_ID,
-    name: 'Medication Reminders',
-    importance: AndroidImportance.HIGH,
-  });
+  return ensureNotificationChannelReady();
 }
 
 export async function scheduleMedicationReminder(
   medication: Medication,
   course: Course,
 ): Promise<void> {
+  await ensureNotificationChannelReady();
+
   const profile = useProfileStore.getState().profile;
   if (profile && !profile.notificationsEnabled) {
     return;
@@ -179,14 +193,24 @@ export async function scheduleMedicationReminder(
 }
 
 export async function cancelMedicationReminders(
-  medicationId: string,
+  medication: Medication,
 ): Promise<void> {
-  await notifee.cancelNotification(`med_${medicationId}`);
-  await notifee.cancelNotification(`med_${medicationId}_slot2`);
+  await ensureNotificationChannelReady();
 
-  for (const day of WEEKDAY_CODES) {
-    await notifee.cancelNotification(`med_${medicationId}_${day}`);
-    await notifee.cancelNotification(`med_${medicationId}_${day}_slot2`);
+  const baseId = `med_${medication.id}`;
+
+  if (isWeekdayFrequency(medication.frequency)) {
+    const weekdays = medication.selectedWeekdays ?? [];
+    for (const day of weekdays) {
+      await notifee.cancelNotification(`${baseId}_${day}`);
+    }
+    return;
+  }
+
+  await notifee.cancelNotification(baseId);
+
+  if (medication.frequency === 'Twice Daily') {
+    await notifee.cancelNotification(`${baseId}_slot2`);
   }
 }
 
@@ -196,13 +220,15 @@ export async function cancelCourseReminders(courseId: string): Promise<void> {
     return;
   }
   for (const medication of course.medications) {
-    await cancelMedicationReminders(medication.id);
+    await cancelMedicationReminders(medication);
   }
 }
 
 export async function rescheduleAllActiveReminders(
   courses: Course[],
 ): Promise<void> {
+  await ensureNotificationChannelReady();
+
   const activeCourses = courses.filter(c => computeCourseStatus(c).isActive);
   for (const course of activeCourses) {
     for (const medication of course.medications) {

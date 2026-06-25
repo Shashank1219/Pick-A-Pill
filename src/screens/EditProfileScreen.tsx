@@ -22,11 +22,14 @@ export function EditProfileScreen({ navigation }: Props) {
   const updateProfile = useProfileStore(s => s.updateProfile);
 
   const [name, setName] = useState(profile?.name ?? '');
+  const [nameError, setNameError] = useState<string | undefined>();
 
   const handleSave = () => {
     if (name.trim().length < 2) {
+      setNameError('Name must be at least 2 characters');
       return;
     }
+    setNameError(undefined);
     updateProfile({
       name: name.trim(),
     });
@@ -47,10 +50,16 @@ export function EditProfileScreen({ navigation }: Props) {
         <TextInput
           style={styles.input}
           value={name}
-          onChangeText={setName}
+          onChangeText={value => {
+            setName(value);
+            if (nameError) {
+              setNameError(undefined);
+            }
+          }}
           placeholder="Your name"
           placeholderTextColor={Colors.textMuted}
         />
+        {nameError ? <Text style={styles.error}>{nameError}</Text> : null}
 
         <TouchableOpacity
           style={styles.button}
@@ -95,6 +104,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     ...Typography.body,
     color: Colors.textPrimary,
+  },
+  error: {
+    ...Typography.caption,
+    color: Colors.coral,
+    marginTop: 8,
   },
   button: {
     height: 56,
