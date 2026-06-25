@@ -20,6 +20,7 @@ const APP_DATA_KEYS: readonly string[] = [
 
 let mmkv: MMKV | null = null;
 let initializePromise: Promise<void> | null = null;
+let dataRecoveryNeeded = false;
 
 function legacyHasAppData(legacy: MMKV): boolean {
   return APP_DATA_KEYS.some(key => legacy.contains(key));
@@ -132,6 +133,30 @@ export function setString(key: string, value: string): void {
   getMmkv().set(key, value);
 }
 
+export function isDataRecoveryNeeded(): boolean {
+  if (dataRecoveryNeeded) {
+    return true;
+  }
+  if (mmkv === null) {
+    return false;
+  }
+  return mmkv.getString(STORAGE_KEYS.DATA_RECOVERY_NEEDED) === 'true';
+}
+
+export function markDataRecoveryNeeded(): void {
+  dataRecoveryNeeded = true;
+  if (mmkv !== null) {
+    mmkv.set(STORAGE_KEYS.DATA_RECOVERY_NEEDED, 'true');
+  }
+}
+
+export function clearDataRecoveryNeeded(): void {
+  dataRecoveryNeeded = false;
+  if (mmkv !== null) {
+    mmkv.remove(STORAGE_KEYS.DATA_RECOVERY_NEEDED);
+  }
+}
+
 export function getObject<T>(key: string): T | undefined {
   const raw = getMmkv().getString(key);
   if (raw === undefined) {
@@ -139,7 +164,9 @@ export function getObject<T>(key: string): T | undefined {
   }
   try {
     return JSON.parse(raw) as T;
-  } catch {
+  } catch (error) {
+    console.error(`[MMKV] Failed to parse JSON for key "${key}":`, error);
+    markDataRecoveryNeeded();
     return undefined;
   }
 }

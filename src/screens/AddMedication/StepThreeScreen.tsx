@@ -17,6 +17,7 @@ import { useCourseStore } from '@/stores/useCourseStore';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 import { AddMedicationStackParamList } from '@/navigation/types';
+import { dismissParentOrCurrent } from '@/navigation/navigationHelpers';
 import { Course, Medication } from '@/types';
 import {
   addDaysToDateString,
@@ -146,7 +147,7 @@ export function StepThreeScreen({ navigation, route }: Props) {
         await scheduleReminders(medications, course);
       }
     } finally {
-      navigation.getParent()?.goBack();
+      dismissParentOrCurrent(navigation);
     }
   };
 

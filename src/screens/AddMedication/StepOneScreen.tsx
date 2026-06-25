@@ -15,6 +15,7 @@ import { StepProgressBar } from '@/components/StepProgressBar';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 import { AddMedicationStackParamList } from '@/navigation/types';
+import { dismissParentOrCurrent } from '@/navigation/navigationHelpers';
 import { useFormContext } from './FormContext';
 
 type Props = NativeStackScreenProps<AddMedicationStackParamList, 'StepOne'>;
@@ -32,7 +33,7 @@ export function StepOneScreen({ navigation, route }: Props) {
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.getParent()?.goBack()}
+          onPress={() => dismissParentOrCurrent(navigation)}
           activeOpacity={0.75}>
           <Text style={styles.back}>←</Text>
         </TouchableOpacity>

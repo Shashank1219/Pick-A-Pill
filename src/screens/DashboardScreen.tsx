@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -63,6 +63,8 @@ function greetingPrefix(): string {
   return 'Good evening,';
 }
 
+const TOGGLE_DEBOUNCE_MS = 300;
+
 export function DashboardScreen({ navigation }: Props) {
   const profile = useProfileStore(s => s.profile);
   const courses = useCourseStore(s => s.courses);
@@ -71,6 +73,26 @@ export function DashboardScreen({ navigation }: Props) {
   const records = useDoseStore(s => s.records);
 
   const [selectedDate, setSelectedDate] = useState(todayString());
+  const lastToggleRef = useRef<Record<string, number>>({});
+
+  const handleDoseToggle = useCallback(
+    (
+      toggleKey: string,
+      courseId: string,
+      medicationId: string,
+      date: string,
+      status: DoseStatus,
+    ) => {
+      const now = Date.now();
+      const lastToggle = lastToggleRef.current[toggleKey] ?? 0;
+      if (now - lastToggle < TOGGLE_DEBOUNCE_MS) {
+        return;
+      }
+      lastToggleRef.current[toggleKey] = now;
+      markDose(courseId, medicationId, date, status);
+    },
+    [markDose],
+  );
 
   const dateChips = useMemo(() => {
     const today = parseISO(todayString());
@@ -244,7 +266,8 @@ export function DashboardScreen({ navigation }: Props) {
                     displayStatus={displayStatus}
                     disabled={isFutureDate}
                     onToggle={(status: DoseStatus) =>
-                      markDose(
+                      handleDoseToggle(
+                        `${slot.medicationId}-${selectedDate}`,
                         slot.courseId,
                         slot.medicationId,
                         selectedDate,

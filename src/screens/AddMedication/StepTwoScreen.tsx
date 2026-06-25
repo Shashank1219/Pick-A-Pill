@@ -14,6 +14,7 @@ import { StepProgressBar } from '@/components/StepProgressBar';
 import { Colors } from '@/tokens/colors';
 import { Typography } from '@/tokens/typography';
 import { AddMedicationStackParamList } from '@/navigation/types';
+import { dismissParentOrCurrent } from '@/navigation/navigationHelpers';
 import { useFormContext } from './FormContext';
 
 type Props = NativeStackScreenProps<AddMedicationStackParamList, 'StepTwo'>;
@@ -43,7 +44,7 @@ export function StepTwoScreen({ navigation, route }: Props) {
         <TouchableOpacity
           onPress={() => {
             if (form.skipStepOne) {
-              navigation.getParent()?.goBack();
+              dismissParentOrCurrent(navigation);
             } else {
               navigation.goBack();
             }

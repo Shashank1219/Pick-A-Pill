@@ -16,7 +16,13 @@ export function formatDisplayDate(dateStr: string): string {
 }
 
 export function formatTime(hhmm: string): string {
+  if (!hhmm) {
+    return '—';
+  }
   const parsed = parse(hhmm, 'HH:mm', new Date());
+  if (isNaN(parsed.getTime())) {
+    return '—';
+  }
   return format(parsed, 'h:mm a');
 }
 
