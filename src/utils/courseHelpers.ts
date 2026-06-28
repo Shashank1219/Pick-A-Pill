@@ -90,8 +90,8 @@ export function computeDisplayStatus(
   date: string,
   slotTime?: string,
 ): DoseStatus {
-  // Stored record always wins — auto-missed fallback applies only when record is absent.
-  if (record !== undefined) {
+  // Taken/missed are explicit user marks. Pending records still auto-resolve by date/time.
+  if (record !== undefined && record.status !== 'pending') {
     return record.status;
   }
 

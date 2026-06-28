@@ -85,8 +85,13 @@ export function StepThreeScreen({ navigation, route }: Props) {
   const updateMedicationInCourse = useCourseStore(s => s.updateMedicationInCourse);
   const getCourseById = useCourseStore(s => s.getCourseById);
 
-  const startDate = todayString();
+  const startDate = form.skipStepOne ? todayString() : form.courseStartDate;
   const endDate = addDaysToDateString(startDate, form.effectiveDuration - 1);
+
+  const startDateLabel =
+    startDate === todayString()
+      ? `Today (${formatDisplayDate(startDate)})`
+      : formatDisplayDate(startDate);
 
   const stepLabel = form.skipStepOne
     ? 'Step 2 of 2 — Confirm'
@@ -177,10 +182,7 @@ export function StepThreeScreen({ navigation, route }: Props) {
                 label="Duration"
                 value={`${form.effectiveDuration} days`}
               />
-              <SummaryRow
-                label="Start Date"
-                value={`Today (${formatDisplayDate(startDate)})`}
-              />
+              <SummaryRow label="Start Date" value={startDateLabel} />
               <SummaryRow
                 label="End Date"
                 value={formatDisplayDate(endDate)}

@@ -60,6 +60,10 @@ export function addHoursToTime(hhmm: string, hours: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+export function isDateBeforeToday(dateStr: string): boolean {
+  return dateStr < todayString();
+}
+
 export function isDateInCourseRange(
   date: string,
   startDate: string,

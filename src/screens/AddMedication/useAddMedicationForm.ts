@@ -3,7 +3,7 @@ import uuid from 'react-native-uuid';
 
 import { useCourseStore } from '@/stores/useCourseStore';
 import { FormFactor, Frequency, WeekdayCode } from '@/types';
-import { addHoursToTime } from '@/utils/dateHelpers';
+import { addHoursToTime, isDateBeforeToday, todayString } from '@/utils/dateHelpers';
 import {
   MedicationBlockFieldErrors,
   validateBlockFields,
@@ -51,9 +51,13 @@ export function useAddMedicationForm(
   const skipStepOne = Boolean(existingCourseId);
 
   const [courseName, setCourseName] = useState('');
+  const [courseStartDate, setCourseStartDate] = useState(todayString());
   const [durationDays, setDurationDays] = useState(7);
   const [customDurationDays, setCustomDurationDays] = useState(7);
   const [courseNameError, setCourseNameError] = useState<string | undefined>();
+  const [courseStartDateError, setCourseStartDateError] = useState<
+    string | undefined
+  >();
   const [durationError, setDurationError] = useState<string | undefined>();
   const [medicationBlocks, setMedicationBlocks] = useState<MedicationBlock[]>([
     createEmptyBlock(true),
@@ -98,6 +102,13 @@ export function useAddMedicationForm(
   }, [editMedicationId, existingCourseId, getCourseById]);
 
   const effectiveDuration = durationDays || customDurationDays;
+
+  const setCourseStartDateValidated = useCallback((date: string) => {
+    setCourseStartDate(date);
+    if (!isDateBeforeToday(date)) {
+      setCourseStartDateError(undefined);
+    }
+  }, []);
 
   const updateBlock = useCallback(
     (localId: string, partial: Partial<MedicationBlock>) => {
@@ -148,10 +159,15 @@ export function useAddMedicationForm(
 
     let valid = true;
     let nextCourseNameError: string | undefined;
+    let nextCourseStartDateError: string | undefined;
     let nextDurationError: string | undefined;
 
     if (courseName.trim().length < 1) {
       nextCourseNameError = 'Course name is required';
+      valid = false;
+    }
+    if (isDateBeforeToday(courseStartDate)) {
+      nextCourseStartDateError = 'Start date cannot be in the past';
       valid = false;
     }
     if (effectiveDuration <= 0) {
@@ -160,9 +176,10 @@ export function useAddMedicationForm(
     }
 
     setCourseNameError(nextCourseNameError);
+    setCourseStartDateError(nextCourseStartDateError);
     setDurationError(nextDurationError);
     return valid;
-  }, [courseName, effectiveDuration, skipStepOne]);
+  }, [courseName, courseStartDate, effectiveDuration, skipStepOne]);
 
   const addBlock = useCallback((): boolean => {
     const expanded = medicationBlocks.find(b => b.isExpanded);
@@ -221,12 +238,15 @@ export function useAddMedicationForm(
     skipStepOne,
     courseName,
     setCourseName,
+    courseStartDate,
+    setCourseStartDate: setCourseStartDateValidated,
     durationDays,
     setDurationDays,
     customDurationDays,
     setCustomDurationDays,
     effectiveDuration,
     courseNameError,
+    courseStartDateError,
     durationError,
     medicationBlocks,
     updateBlock,

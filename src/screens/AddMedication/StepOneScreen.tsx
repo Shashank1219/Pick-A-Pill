@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { DatePickerField } from '@/components/DatePickerField';
 import { DurationSelector } from '@/components/DurationSelector';
 import { StepProgressBar } from '@/components/StepProgressBar';
 import { Colors } from '@/tokens/colors';
@@ -61,6 +62,17 @@ export function StepOneScreen({ navigation, route }: Props) {
           />
           {form.courseNameError ? (
             <Text style={styles.error}>{form.courseNameError}</Text>
+          ) : null}
+        </View>
+
+        <View style={styles.field}>
+          <Text style={styles.label}>COURSE START DATE</Text>
+          <DatePickerField
+            value={form.courseStartDate}
+            onChange={form.setCourseStartDate}
+          />
+          {form.courseStartDateError ? (
+            <Text style={styles.error}>{form.courseStartDateError}</Text>
           ) : null}
         </View>
 

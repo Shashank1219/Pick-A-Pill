@@ -131,7 +131,7 @@ describe('computeDisplayStatus', () => {
     jest.useRealTimers();
   });
 
-  it('returns stored record status regardless of time', () => {
+  it('returns stored taken status regardless of time', () => {
     const record: DoseRecord = {
       id: 'dose-1',
       courseId: 'course-1',
@@ -143,6 +143,17 @@ describe('computeDisplayStatus', () => {
     jest.setSystemTime(new Date('2024-06-15T23:59:00'));
     expect(computeDisplayStatus(record, medication, '2024-06-15')).toBe('taken');
     jest.useRealTimers();
+  });
+
+  it('resolves stale pending records on past dates as missed', () => {
+    const record: DoseRecord = {
+      id: 'dose-1',
+      courseId: 'course-1',
+      medicationId: 'med-1',
+      date: '2024-06-14',
+      status: 'pending',
+    };
+    expect(computeDisplayStatus(record, medication, '2024-06-14')).toBe('missed');
   });
 
   it('returns pending when slot time is invalid', () => {
