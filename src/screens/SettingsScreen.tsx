@@ -112,7 +112,7 @@ export function SettingsScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <Text style={styles.version}>Pick-A-Pill v2.4.1</Text>
         <TouchableOpacity
-          onPress={() => Linking.openURL('https://example.com/privacy')}
+          onPress={() => Linking.openURL('https://shashank1219.github.io/Pick-A-Pill/privacy-policy.html')}
           activeOpacity={0.75}>
           <Text style={styles.privacy}>Privacy Policy</Text>
         </TouchableOpacity>
