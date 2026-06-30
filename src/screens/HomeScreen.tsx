@@ -19,8 +19,8 @@ type Props = CompositeScreenProps<
 export function HomeScreen({ navigation }: Props) {
   const courses = useCourseStore(s => s.courses);
 
-  const activeCourses = useMemo(
-    () => courses.filter(c => computeCourseStatus(c).isActive),
+  const visibleCourses = useMemo(
+    () => courses.filter(c => !computeCourseStatus(c).isCompleted),
     [courses],
   );
 
@@ -38,10 +38,10 @@ export function HomeScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      {activeCourses.length === 0 ? (
+      {visibleCourses.length === 0 ? (
         <Text style={styles.empty}>No courses yet. Tap + to begin.</Text>
       ) : (
-        activeCourses.map(course => (
+        visibleCourses.map(course => (
           <CourseCard
             key={course.id}
             course={course}

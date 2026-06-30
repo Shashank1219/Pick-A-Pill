@@ -5,8 +5,17 @@ import { getObject, setObject } from '@/storage/mmkvStorage';
 import { STORAGE_KEYS } from '@/storage/keys';
 import { Course, Medication } from '@/types';
 
+const hydrateCourses = (): Course[] => {
+  try {
+    return getObject<Course[]>(STORAGE_KEYS.COURSES) ?? [];
+  } catch {
+    return [];
+  }
+};
+
 interface CourseStore {
   courses: Course[];
+  hydrateFromStorage: () => void;
   addCourse: (course: Course) => void;
   updateCourse: (id: string, partial: Partial<Course>) => void;
   addMedicationToCourse: (courseId: string, medication: Medication) => void;
@@ -22,12 +31,12 @@ interface CourseStore {
   getCompletedCourses: () => Course[];
 }
 
-const hydrateCourses = (): Course[] => {
-  return getObject<Course[]>(STORAGE_KEYS.COURSES) ?? [];
-};
-
 export const useCourseStore = create<CourseStore>((set, get) => ({
-  courses: hydrateCourses(),
+  courses: [],
+
+  hydrateFromStorage: () => {
+    set({ courses: hydrateCourses() });
+  },
 
   addCourse: (course: Course) => {
     const courses = [...get().courses, course];

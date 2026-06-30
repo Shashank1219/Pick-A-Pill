@@ -1,6 +1,20 @@
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from 'react';
+import {
+  Keyboard,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import DateTimePicker, {
+  DateTimePickerAndroid,
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
@@ -25,22 +39,41 @@ function toDate(hhmm: string): Date {
 
 export const TimePickerField = forwardRef<TimePickerFieldRef, Props>(
   function TimePickerField({ value, onChange }, ref) {
-    const [show, setShow] = useState(false);
+    const [showIosPicker, setShowIosPicker] = useState(false);
+    const pickerValue = useMemo(() => toDate(value), [value]);
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        open: () => setShow(true),
-      }),
-      [],
+    const applyTime = useCallback(
+      (date: Date) => {
+        onChange(format(date, 'HH:mm'));
+        Keyboard.dismiss();
+      },
+      [onChange],
     );
 
-    const onPickerChange = (_event: DateTimePickerEvent, date?: Date) => {
+    const openPicker = useCallback(() => {
+      Keyboard.dismiss();
+
       if (Platform.OS === 'android') {
-        setShow(false);
+        DateTimePickerAndroid.open({
+          value: pickerValue,
+          mode: 'time',
+          is24Hour: false,
+          onValueChange: (_event, date) => {
+            applyTime(date);
+          },
+        });
+        return;
       }
+
+      setShowIosPicker(true);
+    }, [applyTime, pickerValue]);
+
+    useImperativeHandle(ref, () => ({ open: openPicker }), [openPicker]);
+
+    const onIosPickerChange = (_event: DateTimePickerEvent, date?: Date) => {
+      setShowIosPicker(false);
       if (date) {
-        onChange(format(date, 'HH:mm'));
+        applyTime(date);
       }
     };
 
@@ -48,18 +81,18 @@ export const TimePickerField = forwardRef<TimePickerFieldRef, Props>(
       <View>
         <TouchableOpacity
           style={styles.row}
-          onPress={() => setShow(true)}
+          onPress={openPicker}
           activeOpacity={0.75}>
           <Clock size={20} color={Colors.navy} />
           <Text style={styles.text}>{formatTime(value)}</Text>
         </TouchableOpacity>
-        {show && (
+        {Platform.OS === 'ios' && showIosPicker && (
           <DateTimePicker
-            value={toDate(value)}
+            value={pickerValue}
             mode="time"
             is24Hour={false}
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={onPickerChange}
+            display="spinner"
+            onChange={onIosPickerChange}
           />
         )}
       </View>

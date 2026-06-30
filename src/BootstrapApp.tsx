@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ensureNotificationChannelReady } from '@/services/notificationService';
+import { hydrateAllStores } from '@/stores/hydrateStores';
 import { initializeMmkvStorage } from '@/storage/mmkvStorage';
 import { Colors } from '@/tokens/colors';
 
@@ -16,6 +17,7 @@ export function BootstrapApp() {
     const bootstrap = async () => {
       try {
         await initializeMmkvStorage();
+        hydrateAllStores();
         await ensureNotificationChannelReady();
       } catch (error) {
         console.error('[Bootstrap] Initialization failed:', error);

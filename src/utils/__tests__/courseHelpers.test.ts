@@ -156,6 +156,20 @@ describe('computeDisplayStatus', () => {
     expect(computeDisplayStatus(record, medication, '2024-06-14')).toBe('missed');
   });
 
+  it('honors explicit pending records on today', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2024-06-15T09:00:00'));
+    const record: DoseRecord = {
+      id: 'dose-1',
+      courseId: 'course-1',
+      medicationId: 'med-1',
+      date: '2024-06-15',
+      status: 'pending',
+    };
+    expect(computeDisplayStatus(record, medication, '2024-06-15')).toBe('pending');
+    jest.useRealTimers();
+  });
+
   it('returns pending when slot time is invalid', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-06-15T12:00:00'));
@@ -202,6 +216,31 @@ describe('computeCourseStatus', () => {
     );
     expect(status.isCompleted).toBe(true);
     expect(status.isActive).toBe(false);
+  });
+
+  it('reports zero completed days on the course start date', () => {
+    const status = computeCourseStatus(
+      makeCourse({ startDate: '2024-06-15', endDate: '2024-07-15', durationDays: 31 }),
+    );
+    expect(status.daysElapsed).toBe(0);
+    expect(status.daysLeft).toBe(31);
+    expect(status.progressRatio).toBe(0);
+  });
+
+  it('counts only fully completed days after the start date', () => {
+    jest.spyOn(dateHelpers, 'todayString').mockReturnValue('2024-06-17');
+    const status = computeCourseStatus(
+      makeCourse({ startDate: '2024-06-15', endDate: '2024-07-15', durationDays: 31 }),
+    );
+    expect(status.daysElapsed).toBe(2);
+  });
+
+  it('reports zero days left for upcoming courses', () => {
+    const status = computeCourseStatus(
+      makeCourse({ startDate: '2024-06-20', endDate: '2024-07-20', durationDays: 31 }),
+    );
+    expect(status.daysLeft).toBe(0);
+    expect(status.daysElapsed).toBe(0);
   });
 });
 

@@ -7,6 +7,12 @@ import { Course, CourseStatus } from '@/types';
 import { Colors } from '@/tokens/colors';
 import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
+import { formatDisplayDate } from '@/utils/dateHelpers';
+import {
+  formatDayCourse,
+  formatDaysCompleted,
+  formatDaysLeft,
+} from '@/utils/formatLabels';
 
 interface Props {
   course: Course;
@@ -46,6 +52,12 @@ export function CourseCard({
   const firstMed = course.medications[0];
   const summary = medicationSummary(course);
 
+  const topRightLabel = status.isUpcoming
+    ? `Starts ${formatDisplayDate(course.startDate)}`
+    : status.isActive
+      ? formatDaysLeft(status.daysLeft)
+      : null;
+
   return (
     <TouchableOpacity
       style={[styles.card, CardShadow, CardSurfaceClip]}
@@ -64,7 +76,9 @@ export function CourseCard({
           <Text style={styles.name}>{course.name}</Text>
           {showUrgency && <UrgencyBadge level={status.urgency} />}
         </View>
-        <Text style={styles.daysLeft}>{status.daysLeft} days left</Text>
+        {topRightLabel !== null ? (
+          <Text style={styles.daysLeft}>{topRightLabel}</Text>
+        ) : null}
       </View>
       {summary ? <Text style={styles.medSummary}>{summary}</Text> : null}
       {firstMed?.dosageStrength ? (
@@ -72,7 +86,8 @@ export function CourseCard({
       ) : null}
       <ProgressBar progress={status.progressRatio} style={styles.bar} />
       <Text style={styles.footer}>
-        {status.daysElapsed} days completed · {course.durationDays} day course
+        {formatDaysCompleted(status.daysElapsed)} ·{' '}
+        {formatDayCourse(course.durationDays)}
       </Text>
     </TouchableOpacity>
   );

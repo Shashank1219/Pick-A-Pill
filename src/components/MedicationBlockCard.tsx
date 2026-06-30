@@ -208,7 +208,10 @@ export function MedicationBlockCard({
         <TimePickerField
           ref={reminderTimeRef}
           value={block.reminderTime}
-          onChange={v => onUpdate({ reminderTime: v })}
+          onChange={v => {
+            dismissTextFocus();
+            onUpdate({ reminderTime: v });
+          }}
         />
       </View>
 
@@ -219,7 +222,10 @@ export function MedicationBlockCard({
           </Text>
           <TimePickerField
             value={block.secondReminderTime}
-            onChange={v => onUpdate({ secondReminderTime: v })}
+            onChange={v => {
+              dismissTextFocus();
+              onUpdate({ secondReminderTime: v });
+            }}
           />
           {block.errors.secondReminderTime ? (
             <Text style={styles.error}>{block.errors.secondReminderTime}</Text>

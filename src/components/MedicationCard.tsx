@@ -10,7 +10,7 @@ import {
   Medication,
 } from '@/types';
 import { Colors } from '@/tokens/colors';
-import { CardShadow, CardSurfaceClip } from '@/tokens/elevation';
+import { CardShadow } from '@/tokens/elevation';
 import { Typography } from '@/tokens/typography';
 import { cycleDoseStatus } from '@/utils/courseHelpers';
 import { formatTime } from '@/utils/dateHelpers';
@@ -84,63 +84,70 @@ export function MedicationCard({
   const dosageLabel = medication.dosageStrength.trim() || '—';
 
   return (
-    <TouchableOpacity
+    <View
       style={[
-        styles.card,
+        styles.cardShell,
         CardShadow,
-        CardSurfaceClip,
-        cardStyle,
         disabled && styles.disabledCard,
-      ]}
-      onPress={handleToggle}
-      activeOpacity={disabled ? 1 : 0.75}
-      disabled={disabled}>
-      <View style={styles.iconWrap}>
-        <FormFactorIcon formFactor={medication.formFactor} />
-      </View>
-      <View style={styles.content}>
-        <View style={styles.nameRow}>
-          <Text
-            style={[
-              styles.name,
-              displayStatus === 'taken' && styles.nameTaken,
-            ]}>
-            {medication.name}
-          </Text>
-          <StatusBadge status={displayStatus} />
+      ]}>
+      <TouchableOpacity
+        style={[styles.card, cardStyle]}
+        onPress={handleToggle}
+        activeOpacity={disabled ? 1 : 0.75}
+        disabled={disabled}>
+        <View style={styles.iconWrap}>
+          <FormFactorIcon formFactor={medication.formFactor} />
         </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>
-            {dosageLabel} · {medication.formFactor}
-          </Text>
-          <Text style={styles.meta}> · </Text>
-          <Clock size={12} color={Colors.textMuted} />
-          <Text style={styles.meta}> {formatTime(slotTime)}</Text>
+        <View style={styles.content}>
+          <View style={styles.nameRow}>
+            <Text
+              style={[
+                styles.name,
+                displayStatus === 'taken' && styles.nameTaken,
+              ]}>
+              {medication.name}
+            </Text>
+            <StatusBadge status={displayStatus} />
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.meta}>
+              {dosageLabel} · {medication.formFactor}
+            </Text>
+            <Text style={styles.meta}> · </Text>
+            <Clock size={12} color={Colors.textMuted} />
+            <Text style={styles.meta}> {formatTime(slotTime)}</Text>
+          </View>
         </View>
-      </View>
-      <StatusCircle
-        status={displayStatus}
-        onToggle={disabled ? () => {} : handleToggle}
-      />
-    </TouchableOpacity>
+        <StatusCircle status={displayStatus} />
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardShell: {
+    borderRadius: 14,
+    marginBottom: 10,
+    backgroundColor: Colors.card,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 14,
     padding: 14,
-    marginBottom: 10,
+    overflow: 'hidden',
   },
   takenCard: {
     backgroundColor: Colors.takenBg,
+    borderWidth: 1,
+    borderColor: Colors.takenBorder,
     borderLeftWidth: 3,
     borderLeftColor: Colors.takenBorder,
   },
   missedCard: {
     backgroundColor: Colors.missedBg,
+    borderWidth: 1,
+    borderColor: Colors.missedBorder,
     borderLeftWidth: 3,
     borderLeftColor: Colors.missedBorder,
   },
@@ -148,6 +155,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.pendingBg,
     borderWidth: 1,
     borderColor: Colors.border,
+    borderLeftWidth: 1,
+    borderLeftColor: Colors.border,
   },
   disabledCard: {
     opacity: 0.55,
@@ -163,6 +172,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     marginLeft: 12,
+    minWidth: 0,
   },
   nameRow: {
     flexDirection: 'row',

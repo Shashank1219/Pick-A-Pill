@@ -90,12 +90,15 @@ export function computeDisplayStatus(
   date: string,
   slotTime?: string,
 ): DoseStatus {
-  // Taken/missed are explicit user marks. Pending records still auto-resolve by date/time.
-  if (record !== undefined && record.status !== 'pending') {
+  const today = todayString();
+
+  if (record !== undefined) {
+    // Stale pending on past dates auto-resolves to missed; all other stored marks are explicit.
+    if (record.status === 'pending' && date < today) {
+      return 'missed';
+    }
     return record.status;
   }
-
-  const today = todayString();
 
   if (date > today) {
     return 'pending';
@@ -126,14 +129,15 @@ export function computeCourseStatus(course: Course): CourseStatus {
   const isCompleted = course.endDate < today;
   const isActive = !isUpcoming && !isCompleted;
 
-  const daysLeft = isCompleted
-    ? 0
-    : Math.max(0, diffInDays(today, course.endDate) + 1);
+  const daysLeft = isActive
+    ? Math.max(0, diffInDays(today, course.endDate) + 1)
+    : 0;
 
-  const rawElapsed = diffInDays(course.startDate, today) + 1;
   const daysElapsed = isUpcoming
     ? 0
-    : Math.min(Math.max(0, rawElapsed), course.durationDays);
+    : isCompleted
+      ? course.durationDays
+      : Math.max(0, diffInDays(course.startDate, today));
 
   const progressRatio = Math.min(
     1,

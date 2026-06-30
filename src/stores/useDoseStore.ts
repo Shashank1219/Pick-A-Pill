@@ -5,8 +5,17 @@ import { getObject, setObject } from '@/storage/mmkvStorage';
 import { STORAGE_KEYS } from '@/storage/keys';
 import { DoseRecord, DoseStatus } from '@/types';
 
+const hydrateRecords = (): DoseRecord[] => {
+  try {
+    return getObject<DoseRecord[]>(STORAGE_KEYS.DOSE_RECORDS) ?? [];
+  } catch {
+    return [];
+  }
+};
+
 interface DoseStore {
   records: DoseRecord[];
+  hydrateFromStorage: () => void;
   getDoseForDay: (
     medicationId: string,
     date: string,
@@ -22,12 +31,12 @@ interface DoseStore {
   deleteRecordsForCourse: (courseId: string) => void;
 }
 
-const hydrateRecords = (): DoseRecord[] => {
-  return getObject<DoseRecord[]>(STORAGE_KEYS.DOSE_RECORDS) ?? [];
-};
-
 export const useDoseStore = create<DoseStore>((set, get) => ({
-  records: hydrateRecords(),
+  records: [],
+
+  hydrateFromStorage: () => {
+    set({ records: hydrateRecords() });
+  },
 
   getDoseForDay: (medicationId: string, date: string) => {
     return get().records.find(

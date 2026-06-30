@@ -259,7 +259,7 @@ export function DashboardScreen({ navigation }: Props) {
                 );
                 return (
                   <MedicationCard
-                    key={`${slot.medicationId}-${selectedDate}`}
+                    key={`${slot.medicationId}-${slot.slotTime}-${selectedDate}`}
                     medication={slot.medication}
                     slotTime={slot.slotTime}
                     date={selectedDate}

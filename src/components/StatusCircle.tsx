@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 
 import { DoseStatus } from '@/types';
@@ -7,14 +7,12 @@ import { Colors } from '@/tokens/colors';
 
 interface Props {
   status: DoseStatus;
-  onToggle: () => void;
 }
 
-export function StatusCircle({ status, onToggle }: Props) {
+export function StatusCircle({ status }: Props) {
   return (
-    <TouchableOpacity
-      onPress={onToggle}
-      activeOpacity={0.75}
+    <View
+      pointerEvents="none"
       style={[
         styles.circle,
         status === 'taken' && styles.taken,
@@ -22,7 +20,7 @@ export function StatusCircle({ status, onToggle }: Props) {
         status === 'pending' && styles.pending,
       ]}>
       {status === 'taken' && <Check size={16} color={Colors.textOnNavy} />}
-    </TouchableOpacity>
+    </View>
   );
 }
 

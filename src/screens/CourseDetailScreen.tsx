@@ -19,6 +19,7 @@ import { Typography } from '@/tokens/typography';
 import { RootStackParamList } from '@/navigation/types';
 import { computeCourseStatus } from '@/utils/courseHelpers';
 import { formatDisplayDate } from '@/utils/dateHelpers';
+import { formatDaysCompletedOfTotal } from '@/utils/formatLabels';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CourseDetail'>;
 
@@ -80,7 +81,7 @@ export function CourseDetailScreen({ navigation, route }: Props) {
       </Text>
       <ProgressBar progress={status.progressRatio} style={styles.bar} />
       <Text style={styles.progressLabel}>
-        {status.daysElapsed} of {course.durationDays} days completed
+        {formatDaysCompletedOfTotal(status.daysElapsed, course.durationDays)}
       </Text>
 
       <Text style={styles.sectionTitle}>Medications in this course</Text>
